@@ -6,11 +6,13 @@ A custom [`FileImporter`](https://sass-lang.com/documentation/js-api/interfaces/
 
 Dart Sass removed the `includePaths` option. This package provides a `FileImporter` that restores that behavior, allowing you to resolve `@use` and `@import` from directories like `node_modules`.
 
-I needed this for my own bundler and static site generator [Poops](https://github.com/stamat/poops). Since legacy API support [`includePaths`](https://sass-lang.com/documentation/js-api/interfaces/legacyfileoptions/#includePaths) didn't work for me at all and I wanted it to work like I was remembering it, I went ahead and wrote it. Might be completely useless by now...
+I needed this for my own bundler and static site generator [Poops](https://github.com/stamat/poops) in 2023. Since legacy API support [`includePaths`](https://sass-lang.com/documentation/js-api/interfaces/legacyfileoptions/#includePaths) didn't work for me at all and I wanted it to work like I was remembering it, I went ahead and wrote it. Might be completely useless by now...
 
 Now that it's complete and supports paths like in good old days, because:
 
 > It's dangerous to go alone! Take this.
+
+P.S. I see now `pkg:` prefixed node imports exist since exactly a year ago... well, whatever... 🤣
 
 ## Install
 
