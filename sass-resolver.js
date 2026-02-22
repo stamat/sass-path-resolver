@@ -52,9 +52,9 @@ export function getPackagePath(url) {
   return dirChunks[0]
 }
 
-export function sassPathResolver(url, resolvePath) {
+export function resolvePath(url, includePath) {
   // check if resolve path, like `node_modules` exists
-  const resolvedPath = pathToFileURL(resolvePath)
+  const resolvedPath = pathToFileURL(includePath)
   if (!fs.existsSync(resolvedPath.pathname)) return null
   const importPath = path.relative(process.cwd(), path.join(resolvedPath.pathname, url))
 
@@ -97,3 +97,21 @@ export function sassPathResolver(url, resolvePath) {
 
   return null
 }
+
+export function sassResolver(includePaths) {
+  if (typeof includePaths === 'string') {
+    includePaths = [includePaths]
+  }
+
+  return {
+    findFileUrl(url) {
+      for (const includePath of includePaths) {
+        const result = resolvePath(url, includePath)
+        if (result) return result
+      }
+      return null
+    }
+  }
+}
+
+export default sassResolver

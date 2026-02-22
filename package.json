@@ -1,6 +1,6 @@
 {
   "name": "sass-resolver",
-  "description": "Straightforward, no-bullshit bundler for the web.",
+  "description": "A custom resolver for dart-sass with support for include paths",
   "version": "1.0.0",
   "license": "MIT",
   "type": "module",
