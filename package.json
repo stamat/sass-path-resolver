@@ -1,0 +1,40 @@
+{
+  "name": "sass-resolver",
+  "description": "Straightforward, no-bullshit bundler for the web.",
+  "version": "1.0.0",
+  "license": "MIT",
+  "type": "module",
+  "main": "sass-resolver.js",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/stamat/sass-resolver.git"
+  },
+  "files": [
+    "sass-resolver.js"
+  ],
+  "author": "Stamat <@stamat> (http://stamat.info)",
+  "homepage": "https://github.com/stamat/sass-resolver",
+  "private": false,
+  "keywords": [
+    "sass",
+    "resolver",
+    "importer",
+    "dart-sass",
+    "path-resolver"
+  ],
+  "scripts": {
+    "lint": "eslint ./sass-resolver.js",
+    "test": "NODE_OPTIONS='--experimental-vm-modules' jest"
+  },
+  "dependencies": {
+  },
+  "devDependencies": {
+    "@jest/globals": "^30.2.0",
+    "eslint": "^9.39.3",
+    "jest": "^30.2.0",
+    "neostandard": "^0.12.2"
+  },
+  "overrides": {
+    "minimatch": ">=10.2.1"
+  }
+}
