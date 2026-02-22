@@ -2,6 +2,8 @@ import fs from 'node:fs'
 import path from 'node:path'
 import { pathToFileURL } from 'node:url'
 
+const STYLE_EXTENSIONS = ['sass', 'scss', 'css']
+
 export function pathExists() {
   return fs.existsSync(path.join(...arguments))
 }
@@ -61,7 +63,7 @@ export function resolvePath(url, includePath) {
   // 1. Maybe it's a directory?
   if (pathExists(importPath) && pathIsDirectory(importPath)) {
     // Try to find an index file within the directory
-    const correctIndexFile = tryToFindFile(path.join(importPath, 'index'), ['sass', 'scss', 'css'])
+    const correctIndexFile = tryToFindFile(path.join(importPath, 'index'), STYLE_EXTENSIONS)
     if (correctIndexFile) return new URL(correctIndexFile, resolvedPath)
 
     // package.json discovery
@@ -77,7 +79,7 @@ export function resolvePath(url, includePath) {
   if (pathExists(importPath)) return pathToFileURL(importPath)
 
   // 2.1 Try to find the correct file with different formats
-  const correctFile = tryToFindFile(importPath, ['sass', 'scss', 'css'])
+  const correctFile = tryToFindFile(importPath, STYLE_EXTENSIONS)
   if (correctFile) return new URL(correctFile, resolvedPath)
 
   // 2.2 Maybe it's a file within a package?
@@ -90,7 +92,7 @@ export function resolvePath(url, includePath) {
       const styleDir = path.dirname(stylePath)
       const styleFinalPath = path.join(packageFullPath, styleDir, url.replace(packagePath, ''))
 
-      const correctPackageFile = tryToFindFile(styleFinalPath, ['sass', 'scss', 'css'])
+      const correctPackageFile = tryToFindFile(styleFinalPath, STYLE_EXTENSIONS)
       if (correctPackageFile) return new URL(correctPackageFile, resolvedPath)
     }
   }
@@ -99,9 +101,11 @@ export function resolvePath(url, includePath) {
 }
 
 export function sassResolver(includePaths) {
+  if (!includePaths) throw new Error('sassResolver requires at least one include path')
   if (typeof includePaths === 'string') {
     includePaths = [includePaths]
   }
+  if (!Array.isArray(includePaths)) throw new Error('sassResolver expects a string or array of strings')
 
   return {
     findFileUrl(url) {

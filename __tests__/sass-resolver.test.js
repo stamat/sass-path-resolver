@@ -195,4 +195,17 @@ describe('sassResolver', () => {
     const result = importer.findFileUrl('nonexistent-pkg')
     expect(result).toBeNull()
   })
+
+  it('returns null for any URL when given an empty array', () => {
+    const importer = sassResolver([])
+    expect(importer.findFileUrl('my-pkg')).toBeNull()
+  })
+
+  it('throws when called without arguments', () => {
+    expect(() => sassResolver()).toThrow()
+  })
+
+  it('throws when called with an invalid argument', () => {
+    expect(() => sassResolver(123)).toThrow()
+  })
 })
