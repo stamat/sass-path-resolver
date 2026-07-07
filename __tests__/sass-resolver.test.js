@@ -60,7 +60,7 @@ describe('tryToFindFile', () => {
 
   it('finds underscore partials at root level', () => {
     const result = tryToFindFile('src/partial', ['sass', 'scss', 'css'])
-    expect(result).toBe('src/_partial.scss')
+    expect(result).toBe(path.join('src', '_partial.scss'))
   })
 
   it('returns null for nonexistent files', () => {
@@ -75,7 +75,7 @@ describe('tryToFindFile', () => {
 
   it('finds files in subdirectories', () => {
     const result = tryToFindFile('src/subdir/item', ['sass', 'scss', 'css'])
-    expect(result).toBe('src/subdir/_item.scss')
+    expect(result).toBe(path.join('src', 'subdir', '_item.scss'))
   })
 
   it('finds underscore partials in nested paths without extension', () => {

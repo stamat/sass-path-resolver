@@ -38,9 +38,9 @@ export function tryToFindFile(filePath, extensions) {
   if (fileExt) return `${filePath}.${fileExt}`
 
   if (!pathParts.name.startsWith('_')) {
-    pathParts.name = `_${pathParts.name}`
-    pathParts.base = ''
-    const underscoredFilePath = path.format(pathParts)
+    // path.join over path.format so the result uses native separators
+    // throughout, instead of mixing them with the input's on Windows
+    const underscoredFilePath = path.join(pathParts.dir, `_${pathParts.base}`)
     fileExt = extensions.find(ext => fs.existsSync(`${underscoredFilePath}.${ext}`))
     if (fileExt) return `${underscoredFilePath}.${fileExt}`
   }
