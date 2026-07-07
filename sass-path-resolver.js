@@ -56,7 +56,7 @@ export function tryToFindFile(filePath, extensions) {
 export function extractMainPathFromPackageJson(packageJsonPath) {
   if (!pathExists(packageJsonPath, 'package.json')) return null
 
-  const pkg = JSON.parse(fs.readFileSync(path.join(process.cwd(), packageJsonPath, 'package.json'), 'utf-8'))
+  const pkg = JSON.parse(fs.readFileSync(path.join(packageJsonPath, 'package.json'), 'utf-8'))
 
   const mainPath = pkg.sass || pkg.scss || pkg.style || pkg.css || pkg.main
   if (!mainPath) return null
@@ -69,14 +69,13 @@ export function extractMainPathFromPackageJson(packageJsonPath) {
  * @returns {string|null} The package name if it can be extracted, or null if not.
  */
 export function getPackagePath(url) {
-  const parts = path.parse(url)
-  if (!parts.dir) return null
-  const dirChunks = parts.dir.split(path.sep)
-  if (dirChunks.length === 0) return null
-  if (dirChunks[0].startsWith('@') && dirChunks.length > 1) {
-    return path.join(dirChunks[0], dirChunks[1])
+  // Sass import URLs always use forward slashes, never path.sep
+  const chunks = url.split('/').filter(Boolean)
+  if (chunks.length < 2) return null
+  if (chunks[0].startsWith('@')) {
+    return chunks.length > 2 ? `${chunks[0]}/${chunks[1]}` : null
   }
-  return dirChunks[0]
+  return chunks[0]
 }
 
 /**
@@ -87,23 +86,25 @@ export function getPackagePath(url) {
  * @returns {URL|null} A URL object pointing to the resolved file if found, or null if the file cannot be resolved.
  */
 export function resolvePath(url, includePath) {
-  // check if resolve path, like `node_modules` exists
-  const resolvedPath = pathToFileURL(includePath)
-  if (!fs.existsSync(resolvedPath.pathname)) return null
-  const importPath = path.relative(process.cwd(), path.join(resolvedPath.pathname, url))
+  // Work in native paths throughout; convert to file URLs only when
+  // returning. Roundtripping through URL.pathname breaks on Windows
+  // (`/D:/...` is not a valid fs path there).
+  const basePath = path.resolve(includePath)
+  if (!fs.existsSync(basePath)) return null
+  const importPath = path.join(basePath, ...url.split('/'))
 
   // 1. Maybe it's a directory?
   if (pathExists(importPath) && pathIsDirectory(importPath)) {
     // Try to find an index file within the directory
     const correctIndexFile = tryToFindFile(path.join(importPath, 'index'), STYLE_EXTENSIONS)
-    if (correctIndexFile) return new URL(correctIndexFile, resolvedPath)
+    if (correctIndexFile) return pathToFileURL(correctIndexFile)
 
     // package.json discovery
     const style = extractMainPathFromPackageJson(importPath)
 
     if (style) {
-      const stylePath = new URL(path.join(importPath, style), resolvedPath)
-      if (fs.existsSync(stylePath)) return stylePath
+      const stylePath = path.join(importPath, style)
+      if (fs.existsSync(stylePath)) return pathToFileURL(stylePath)
     }
   }
 
@@ -112,20 +113,20 @@ export function resolvePath(url, includePath) {
 
   // 2.1 Try to find the correct file with different formats
   const correctFile = tryToFindFile(importPath, STYLE_EXTENSIONS)
-  if (correctFile) return new URL(correctFile, resolvedPath)
+  if (correctFile) return pathToFileURL(correctFile)
 
   // 2.2 Maybe it's a file within a package?
   const packagePath = getPackagePath(url)
   if (packagePath) {
-    const packageFullPath = path.relative(process.cwd(), path.join(resolvedPath.pathname, packagePath))
+    const packageFullPath = path.join(basePath, ...packagePath.split('/'))
     const stylePath = extractMainPathFromPackageJson(packageFullPath)
 
     if (stylePath) {
       const styleDir = path.dirname(stylePath)
-      const styleFinalPath = path.join(packageFullPath, styleDir, url.replace(packagePath, ''))
+      const styleFinalPath = path.join(packageFullPath, styleDir, ...url.slice(packagePath.length).split('/').filter(Boolean))
 
       const correctPackageFile = tryToFindFile(styleFinalPath, STYLE_EXTENSIONS)
-      if (correctPackageFile) return new URL(correctPackageFile, resolvedPath)
+      if (correctPackageFile) return pathToFileURL(correctPackageFile)
     }
   }
 

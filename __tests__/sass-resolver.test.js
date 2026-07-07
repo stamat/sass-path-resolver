@@ -31,7 +31,7 @@ describe('getPackagePath', () => {
   })
 
   it('returns scoped package path for @scoped packages', () => {
-    expect(getPackagePath('@scoped/my-pkg/src/index.scss')).toBe(path.join('@scoped', 'my-pkg'))
+    expect(getPackagePath('@scoped/my-pkg/src/index.scss')).toBe('@scoped/my-pkg')
   })
 
   it('returns first segment for deeper paths', () => {
@@ -115,37 +115,37 @@ describe('resolvePath', () => {
   it('resolves a package directory to its index file', () => {
     const result = resolvePath('my-pkg/src/core', includePath)
     expect(result).not.toBeNull()
-    expect(result.pathname).toContain(path.join('my-pkg', 'src', 'core', 'index.scss'))
+    expect(fileURLToPath(result)).toContain(path.join('my-pkg', 'src', 'core', 'index.scss'))
   })
 
   it('resolves a package root via package.json sass field', () => {
     const result = resolvePath('my-pkg', includePath)
     expect(result).not.toBeNull()
-    expect(result.pathname).toContain(path.join('my-pkg', 'src', 'index.scss'))
+    expect(fileURLToPath(result)).toContain(path.join('my-pkg', 'src', 'index.scss'))
   })
 
   it('resolves a direct file with extension', () => {
     const result = resolvePath('my-pkg/src/index.scss', includePath)
     expect(result).not.toBeNull()
-    expect(result.pathname).toContain(path.join('my-pkg', 'src', 'index.scss'))
+    expect(fileURLToPath(result)).toContain(path.join('my-pkg', 'src', 'index.scss'))
   })
 
   it('resolves a direct file without extension', () => {
     const result = resolvePath('my-pkg/src/index', includePath)
     expect(result).not.toBeNull()
-    expect(result.pathname).toContain(path.join('my-pkg', 'src', 'index.scss'))
+    expect(fileURLToPath(result)).toContain(path.join('my-pkg', 'src', 'index.scss'))
   })
 
   it('resolves scoped packages', () => {
     const result = resolvePath('@scoped/my-pkg', includePath)
     expect(result).not.toBeNull()
-    expect(result.pathname).toContain(path.join('@scoped', 'my-pkg', 'src', 'index.scss'))
+    expect(fileURLToPath(result)).toContain(path.join('@scoped', 'my-pkg', 'src', 'index.scss'))
   })
 
   it('resolves a subdirectory with index file', () => {
     const result = resolvePath('my-pkg/src/core/utils', includePath)
     expect(result).not.toBeNull()
-    expect(result.pathname).toContain(path.join('my-pkg', 'src', 'core', 'utils', 'index.scss'))
+    expect(fileURLToPath(result)).toContain(path.join('my-pkg', 'src', 'core', 'utils', 'index.scss'))
   })
 
   it('returns null for nonexistent resolve path', () => {
@@ -161,13 +161,13 @@ describe('resolvePath', () => {
   it('resolves my-pkg/core/config (underscore partial via package path)', () => {
     const result = resolvePath('my-pkg/core/config', includePath)
     expect(result).not.toBeNull()
-    expect(result.pathname).toContain(path.join('my-pkg', 'src', 'core', '_config.scss'))
+    expect(fileURLToPath(result)).toContain(path.join('my-pkg', 'src', 'core', '_config.scss'))
   })
 
   it('resolves my-pkg/core/utils/helpers (underscore partial via package path)', () => {
     const result = resolvePath('my-pkg/core/utils/helpers', includePath)
     expect(result).not.toBeNull()
-    expect(result.pathname).toContain(path.join('my-pkg', 'src', 'core', 'utils', '_helpers.scss'))
+    expect(fileURLToPath(result)).toContain(path.join('my-pkg', 'src', 'core', 'utils', '_helpers.scss'))
   })
 })
 
@@ -181,14 +181,14 @@ describe('sassPathResolver', () => {
     const importer = sassPathResolver(FAKE_MODULES)
     const result = importer.findFileUrl('my-pkg')
     expect(result).not.toBeNull()
-    expect(result.pathname).toContain(path.join('my-pkg', 'src', 'index.scss'))
+    expect(fileURLToPath(result)).toContain(path.join('my-pkg', 'src', 'index.scss'))
   })
 
   it('resolves a package with an array of paths', () => {
     const importer = sassPathResolver(['/nonexistent/path', FAKE_MODULES])
     const result = importer.findFileUrl('my-pkg')
     expect(result).not.toBeNull()
-    expect(result.pathname).toContain(path.join('my-pkg', 'src', 'index.scss'))
+    expect(fileURLToPath(result)).toContain(path.join('my-pkg', 'src', 'index.scss'))
   })
 
   it('returns null for unresolvable imports', () => {
