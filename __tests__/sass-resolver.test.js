@@ -158,6 +158,11 @@ describe('resolvePath', () => {
     expect(result).toBeNull()
   })
 
+  it('returns null for a directory without index or style fields', () => {
+    const result = resolvePath('no-style-pkg', includePath)
+    expect(result).toBeNull()
+  })
+
   it('resolves my-pkg/core/config (underscore partial via package path)', () => {
     const result = resolvePath('my-pkg/core/config', includePath)
     expect(result).not.toBeNull()

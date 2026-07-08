@@ -108,8 +108,9 @@ export function resolvePath(url, includePath) {
     }
   }
 
-  // 2. Maybe it's a file?
-  if (pathExists(importPath)) return pathToFileURL(importPath)
+  // 2. Maybe it's a file? Directories were handled above; returning one
+  // here would make sass fail to load it instead of trying the next importer
+  if (pathExists(importPath) && !pathIsDirectory(importPath)) return pathToFileURL(importPath)
 
   // 2.1 Try to find the correct file with different formats
   const correctFile = tryToFindFile(importPath, STYLE_EXTENSIONS)
