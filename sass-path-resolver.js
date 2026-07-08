@@ -19,7 +19,8 @@ export function pathExists() {
  * @returns {boolean} True if the path exists and is a directory, false otherwise.
  */
 export function pathIsDirectory() {
-  return fs.lstatSync(path.join(...arguments)).isDirectory()
+  // statSync over lstatSync: pnpm installs packages as symlinks to its store
+  return fs.statSync(path.join(...arguments)).isDirectory()
 }
 
 /**

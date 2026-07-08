@@ -1,4 +1,6 @@
 import { beforeEach, afterEach, it, describe, expect } from '@jest/globals'
+import fs from 'node:fs'
+import os from 'node:os'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 import * as sass from 'sass'
@@ -161,6 +163,18 @@ describe('resolvePath', () => {
   it('returns null for a directory without index or style fields', () => {
     const result = resolvePath('no-style-pkg', includePath)
     expect(result).toBeNull()
+  })
+
+  it('resolves packages behind symlinks (pnpm-style node_modules)', () => {
+    const linkRoot = fs.mkdtempSync(path.join(os.tmpdir(), 'sass-resolver-'))
+    try {
+      fs.symlinkSync(path.join(FAKE_MODULES, 'my-pkg'), path.join(linkRoot, 'my-pkg'), 'dir')
+      const result = resolvePath('my-pkg', linkRoot)
+      expect(result).not.toBeNull()
+      expect(fileURLToPath(result)).toContain(path.join('my-pkg', 'src', 'index.scss'))
+    } finally {
+      fs.rmSync(linkRoot, { recursive: true, force: true })
+    }
   })
 
   it('resolves my-pkg/core/config (underscore partial via package path)', () => {
