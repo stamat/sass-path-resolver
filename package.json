@@ -11,8 +11,8 @@
     "url": "git+https://github.com/stamat/sass-path-resolver.git"
   },
   "files": [
-    "sass-resolver.js",
-    "sass-resolver.d.ts"
+    "sass-path-resolver.js",
+    "sass-path-resolver.d.ts"
   ],
   "author": "Stamat <@stamat> (http://stamat.info)",
   "homepage": "https://github.com/stamat/sass-path-resolver",
@@ -26,7 +26,7 @@
     "file-importer"
   ],
   "scripts": {
-    "lint": "eslint ./sass-resolver.js",
+    "lint": "eslint ./sass-path-resolver.js",
     "test": "NODE_OPTIONS='--experimental-vm-modules' jest"
   },
   "peerDependencies": {
