@@ -62,7 +62,13 @@ export function tryToFindFile(filePath, extensions) {
 export function extractMainPathFromPackageJson(packageJsonPath) {
   if (!pathExists(packageJsonPath, 'package.json')) return null
 
-  const pkg = JSON.parse(fs.readFileSync(path.join(packageJsonPath, 'package.json'), 'utf-8'))
+  let pkg
+  try {
+    pkg = JSON.parse(fs.readFileSync(path.join(packageJsonPath, 'package.json'), 'utf-8'))
+  } catch {
+    // malformed package.json in one package shouldn't kill the whole compile
+    return null
+  }
 
   const mainPath = pkg.sass || pkg.scss || pkg.style || pkg.css || pkg.main
   if (!mainPath) return null
@@ -109,8 +115,11 @@ export function resolvePath(url, includePath) {
     const style = extractMainPathFromPackageJson(importPath)
 
     if (style) {
+      // tryToFindFile over existsSync so a non-style `main` (index.js)
+      // is rejected instead of handed to sass
       const stylePath = path.join(importPath, style)
-      if (fs.existsSync(stylePath)) return pathToFileURL(stylePath)
+      const correctStyleFile = tryToFindFile(stylePath, STYLE_EXTENSIONS)
+      if (correctStyleFile) return pathToFileURL(correctStyleFile)
     }
   }
 

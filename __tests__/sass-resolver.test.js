@@ -114,6 +114,17 @@ describe('extractMainPathFromPackageJson', () => {
     const result = extractMainPathFromPackageJson('fake_modules/nonexistent-pkg')
     expect(result).toBeNull()
   })
+
+  it('returns null for malformed package.json instead of throwing', () => {
+    // built at runtime: a broken package.json in fixtures would crash jest's haste-map
+    const pkgRoot = fs.mkdtempSync(path.join(os.tmpdir(), 'sass-resolver-'))
+    try {
+      fs.writeFileSync(path.join(pkgRoot, 'package.json'), '{ "sass": "src/index.scss"')
+      expect(extractMainPathFromPackageJson(pkgRoot)).toBeNull()
+    } finally {
+      fs.rmSync(pkgRoot, { recursive: true, force: true })
+    }
+  })
 })
 
 describe('resolvePath', () => {
@@ -167,6 +178,11 @@ describe('resolvePath', () => {
 
   it('returns null for a directory without index or style fields', () => {
     const result = resolvePath('no-style-pkg', includePath)
+    expect(result).toBeNull()
+  })
+
+  it('does not resolve a package whose main is a .js file', () => {
+    const result = resolvePath('js-main-pkg', includePath)
     expect(result).toBeNull()
   })
 
