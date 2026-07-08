@@ -70,6 +70,11 @@ describe('tryToFindFile', () => {
     expect(result).toBeNull()
   })
 
+  it('finds underscore partials when an explicit extension is given', () => {
+    const result = tryToFindFile('src/partial.scss', ['sass', 'scss', 'css'])
+    expect(result).toBe(path.join('src', '_partial.scss'))
+  })
+
   it('does not double-underscore already-prefixed names', () => {
     const result = tryToFindFile('src/_partial', ['sass', 'scss', 'css'])
     expect(result).toBe('src/_partial.scss')
@@ -245,6 +250,13 @@ describe('dart sass integration', () => {
       importers: [sassPathResolver(FAKE_MODULES)]
     })
     expect(result.css).toContain('.test')
+    expect(result.css).toContain('color: #f00')
+  })
+
+  it('compiles a string that @use imports a partial with explicit extension', () => {
+    const result = sass.compileString('@use "my-pkg/core/config.scss";\n.test { color: config.$primary-color; }', {
+      importers: [sassPathResolver(FAKE_MODULES)]
+    })
     expect(result.css).toContain('color: #f00')
   })
 

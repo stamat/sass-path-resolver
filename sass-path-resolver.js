@@ -33,6 +33,11 @@ export function tryToFindFile(filePath, extensions) {
   const pathParts = path.parse(filePath)
   if (pathParts.ext && pathParts.ext.length > 0 && extensions.includes(pathParts.ext.slice(1))) {
     if (fs.existsSync(filePath)) return filePath
+    // explicit-extension imports still resolve partials: `foo.scss` -> `_foo.scss`
+    if (!pathParts.name.startsWith('_')) {
+      const underscoredPath = path.join(pathParts.dir, `_${pathParts.base}`)
+      if (fs.existsSync(underscoredPath)) return underscoredPath
+    }
   }
 
   let fileExt = extensions.find(ext => fs.existsSync(`${filePath}.${ext}`))
