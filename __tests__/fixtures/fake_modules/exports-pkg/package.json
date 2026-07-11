@@ -1,0 +1,9 @@
+{
+  "name": "exports-pkg",
+  "main": "index.js",
+  "exports": {
+    ".": { "sass": "./src/index.scss" },
+    "./theme": { "sass": "./src/theme/dark.scss" },
+    "./styles/*": { "sass": "./src/*" }
+  }
+}

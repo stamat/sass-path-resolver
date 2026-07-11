@@ -55,11 +55,12 @@ const result = compileString('@use "my-package";', {
 Given `@use "my-pkg/core/config"` and an include path of `node_modules`, the resolver tries the following in order:
 
 1. **Directory with index file** - `node_modules/my-pkg/core/config/index.{sass,scss,css}`
-2. **Directory with `package.json`** - reads `sass`, `scss`, `style`, `css`, or `main` fields
+2. **Directory with `package.json`** - reads `sass`, `scss`, `style`, `css`, the `exports` map's root entry, or `main`
 3. **Exact file** - `node_modules/my-pkg/core/config`
 4. **File with extension** - `node_modules/my-pkg/core/config.{sass,scss,css}`
 5. **Underscore partial** - `node_modules/my-pkg/core/_config.{sass,scss,css}`
-6. **Package-relative path** - resolves the path relative to the package entry point defined in `package.json`
+6. **`exports` subpath** - resolves `./core/config` through the package's `exports` map (exact and `*` wildcard entries)
+7. **Package-relative path** - resolves the path relative to the package entry point defined in `package.json`
 
 The first match is returned as a `file:` URL. If nothing matches across all include paths, `null` is returned and Sass falls through to its default resolution.
 
@@ -118,7 +119,30 @@ When resolving a package root (e.g. `@use "my-pkg"`), the resolver reads `packag
 - `scss`
 - `style`
 - `css`
+- `exports` (root entry)
 - `main`
+
+### `exports` map
+
+The `exports` field is supported for both the package root and subpaths, including `*` wildcard patterns. Within a condition object, the resolver picks the first of `sass`, `scss`, `style`, `css`, `default` (nested condition objects are followed):
+
+```jsonc
+{
+  "exports": {
+    ".": { "sass": "./src/index.scss" },
+    "./theme": { "sass": "./src/theme/dark.scss" },
+    "./styles/*": { "sass": "./src/*" }
+  }
+}
+```
+
+```scss
+@use "my-pkg";              // → src/index.scss
+@use "my-pkg/theme";        // → src/theme/dark.scss
+@use "my-pkg/styles/extra"; // → src/extra.scss
+```
+
+Non-style `exports` targets (e.g. a `default` condition pointing at a `.js` file) are rejected rather than handed to Sass.
 
 ## API
 

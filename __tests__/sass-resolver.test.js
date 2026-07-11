@@ -7,6 +7,7 @@ import * as sass from 'sass'
 import {
   tryToFindFile,
   extractMainPathFromPackageJson,
+  extractPathFromExports,
   getPackagePath,
   resolvePath,
   sassPathResolver,
@@ -127,6 +128,43 @@ describe('extractMainPathFromPackageJson', () => {
   })
 })
 
+describe('extractPathFromExports', () => {
+  it('resolves a string exports for the root subpath only', () => {
+    expect(extractPathFromExports('./src/index.scss')).toBe('./src/index.scss')
+    expect(extractPathFromExports('./src/index.scss', './theme')).toBeNull()
+  })
+
+  it('resolves a conditions-only object for the root subpath', () => {
+    expect(extractPathFromExports({ sass: './src/index.scss' })).toBe('./src/index.scss')
+    expect(extractPathFromExports({ sass: './src/index.scss' }, './theme')).toBeNull()
+  })
+
+  it('prefers sass over style and default conditions', () => {
+    const exports = { '.': { default: './index.js', style: './dist/main.css', sass: './src/index.scss' } }
+    expect(extractPathFromExports(exports)).toBe('./src/index.scss')
+  })
+
+  it('resolves exact subpath entries', () => {
+    const exports = { './theme': { sass: './src/theme/dark.scss' } }
+    expect(extractPathFromExports(exports, './theme')).toBe('./src/theme/dark.scss')
+  })
+
+  it('resolves wildcard subpath entries', () => {
+    const exports = { './styles/*': { sass: './src/*' } }
+    expect(extractPathFromExports(exports, './styles/extra')).toBe('./src/extra')
+  })
+
+  it('resolves nested condition objects', () => {
+    const exports = { '.': { sass: { default: './src/index.scss' } } }
+    expect(extractPathFromExports(exports)).toBe('./src/index.scss')
+  })
+
+  it('returns null for unmatched subpaths', () => {
+    expect(extractPathFromExports({ './theme': './src/theme.scss' }, './nope')).toBeNull()
+    expect(extractPathFromExports(null)).toBeNull()
+  })
+})
+
 describe('resolvePath', () => {
   const includePath = FAKE_MODULES
 
@@ -196,6 +234,24 @@ describe('resolvePath', () => {
     } finally {
       fs.rmSync(linkRoot, { recursive: true, force: true })
     }
+  })
+
+  it('resolves a package root via exports sass condition', () => {
+    const result = resolvePath('exports-pkg', includePath)
+    expect(result).not.toBeNull()
+    expect(fileURLToPath(result)).toContain(path.join('exports-pkg', 'src', 'index.scss'))
+  })
+
+  it('resolves an exact exports subpath', () => {
+    const result = resolvePath('exports-pkg/theme', includePath)
+    expect(result).not.toBeNull()
+    expect(fileURLToPath(result)).toContain(path.join('exports-pkg', 'src', 'theme', 'dark.scss'))
+  })
+
+  it('resolves a wildcard exports subpath', () => {
+    const result = resolvePath('exports-pkg/styles/extra', includePath)
+    expect(result).not.toBeNull()
+    expect(fileURLToPath(result)).toContain(path.join('exports-pkg', 'src', 'extra.scss'))
   })
 
   it('resolves my-pkg/core/config (underscore partial via package path)', () => {

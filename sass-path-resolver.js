@@ -55,22 +55,88 @@ export function tryToFindFile(filePath, extensions) {
 }
 
 /**
- * Extracts the main style path from a package.json file, checking common fields like `sass`, `scss`, `style`, `css`, and `main`.
- * @param {string} packageJsonPath The path to the package directory containing the package.json file.
- * @returns {string|null} The main style path if found, or null if not found or if package.json doesn't exist.
+ * Reads and parses a package.json from the given package directory.
+ * @param {string} packageDir The path to the package directory containing the package.json file.
+ * @returns {Object|null} The parsed package.json, or null if missing or malformed.
  */
-export function extractMainPathFromPackageJson(packageJsonPath) {
-  if (!pathExists(packageJsonPath, 'package.json')) return null
+export function readPackageJson(packageDir) {
+  if (!pathExists(packageDir, 'package.json')) return null
 
-  let pkg
   try {
-    pkg = JSON.parse(fs.readFileSync(path.join(packageJsonPath, 'package.json'), 'utf-8'))
+    return JSON.parse(fs.readFileSync(path.join(packageDir, 'package.json'), 'utf-8'))
   } catch {
     // malformed package.json in one package shouldn't kill the whole compile
     return null
   }
+}
 
-  const mainPath = pkg.sass || pkg.scss || pkg.style || pkg.css || pkg.main
+const STYLE_CONDITIONS = ['sass', 'scss', 'style', 'css', 'default']
+
+/**
+ * Resolves an exports entry value to a path string, following style conditions
+ * (`sass`, `scss`, `style`, `css`, `default`) through nested condition objects.
+ * @param {string|Object} value An exports entry value.
+ * @returns {string|null} The target path if one resolves, or null.
+ */
+function resolveExportValue(value) {
+  if (typeof value === 'string') return value
+  if (!value || typeof value !== 'object' || Array.isArray(value)) return null
+  for (const condition of STYLE_CONDITIONS) {
+    if (condition in value) {
+      const result = resolveExportValue(value[condition])
+      if (result) return result
+    }
+  }
+  return null
+}
+
+/**
+ * Resolves a subpath through a package.json `exports` map, supporting root entries,
+ * exact subpaths, single-`*` wildcard patterns, and style conditions.
+ * @param {string|Object} exports The package.json `exports` field.
+ * @param {string} subpath The subpath to resolve, e.g. `.` or `./scss/bootstrap`.
+ * @returns {string|null} The target path relative to the package root, or null.
+ */
+export function extractPathFromExports(exports, subpath = '.') {
+  if (!exports) return null
+  if (typeof exports === 'string') return subpath === '.' ? exports : null
+  if (typeof exports !== 'object' || Array.isArray(exports)) return null
+
+  // a conditions-only object ({ "sass": ... }) describes the root subpath
+  const keys = Object.keys(exports)
+  if (!keys.some(key => key === '.' || key.startsWith('./'))) {
+    return subpath === '.' ? resolveExportValue(exports) : null
+  }
+
+  if (exports[subpath] !== undefined) return resolveExportValue(exports[subpath])
+
+  // wildcard patterns, e.g. "./scss/*": "./dist/scss/*"
+  for (const key of keys) {
+    const starIndex = key.indexOf('*')
+    if (starIndex === -1) continue
+    const prefix = key.slice(0, starIndex)
+    const suffix = key.slice(starIndex + 1)
+    if (subpath.length < prefix.length + suffix.length) continue
+    if (!subpath.startsWith(prefix) || !subpath.endsWith(suffix)) continue
+    const target = resolveExportValue(exports[key])
+    if (target) return target.replace('*', subpath.slice(prefix.length, subpath.length - suffix.length))
+  }
+
+  return null
+}
+
+/**
+ * Extracts the main style path from a package.json file, checking common fields like `sass`, `scss`, `style`, `css`,
+ * the `exports` map's root entry, and `main`.
+ * @param {string} packageJsonPath The path to the package directory containing the package.json file.
+ * @returns {string|null} The main style path if found, or null if not found or if package.json doesn't exist.
+ */
+export function extractMainPathFromPackageJson(packageJsonPath) {
+  const pkg = readPackageJson(packageJsonPath)
+  if (!pkg) return null
+
+  // top-level style fields are explicit intent; exports beats the usually-js `main`
+  const mainPath = pkg.sass || pkg.scss || pkg.style || pkg.css || extractPathFromExports(pkg.exports) || pkg.main
   if (!mainPath) return null
 
   return mainPath
@@ -135,6 +201,17 @@ export function resolvePath(url, includePath) {
   const packagePath = getPackagePath(url)
   if (packagePath) {
     const packageFullPath = path.join(basePath, ...packagePath.split('/'))
+
+    // exports subpath mapping, e.g. "./scss/*": "./dist/scss/*"
+    const pkg = readPackageJson(packageFullPath)
+    if (pkg) {
+      const exportsTarget = extractPathFromExports(pkg.exports, `.${url.slice(packagePath.length)}`)
+      if (exportsTarget) {
+        const exportsFile = tryToFindFile(path.join(packageFullPath, ...exportsTarget.split('/')), STYLE_EXTENSIONS)
+        if (exportsFile) return pathToFileURL(exportsFile)
+      }
+    }
+
     const stylePath = extractMainPathFromPackageJson(packageFullPath)
 
     if (stylePath) {
