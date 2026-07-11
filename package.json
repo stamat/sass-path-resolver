@@ -1,7 +1,7 @@
 {
   "name": "sass-path-resolver",
   "description": "A custom FileImporter for Dart Sass that adds include path resolution, similar to the deprecated includePaths option.",
-  "version": "1.0.3",
+  "version": "1.0.4",
   "license": "MIT",
   "type": "module",
   "main": "sass-path-resolver.js",
