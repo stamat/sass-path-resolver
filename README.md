@@ -1,4 +1,4 @@
-# sass-path-resolver
+# sass-path-resolver [![npm version](https://img.shields.io/npm/v/sass-path-resolver)](https://www.npmjs.com/package/sass-path-resolver)
 
 A custom [`FileImporter`](https://sass-lang.com/documentation/js-api/interfaces/fileimporter/) for Dart Sass that adds include path resolution, similar to the deprecated `includePaths` option.
 
